@@ -2,6 +2,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock
 
 from scripts import check_repo_secrets as secret_scan
 
@@ -106,6 +107,18 @@ class RepoSecretScanTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(configured.stdout.strip(), ".githooks")
+
+    def test_main_accepts_pre_push_remote_arguments(self):
+        runner = Mock()
+        runner.return_value = subprocess.CompletedProcess(args=["git"], returncode=0, stdout="", stderr="")
+
+        exit_code = secret_scan.main(
+            ["--pre-push", "origin", "https://github.com/example/repo.git"],
+            runner=runner,
+            stdin_text="",
+        )
+
+        self.assertEqual(exit_code, 0)
 
 
 if __name__ == "__main__":

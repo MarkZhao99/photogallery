@@ -237,6 +237,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Scan outgoing Git changes for likely secrets.")
     parser.add_argument("--pre-push", action="store_true", help="Read ref updates from stdin like a Git pre-push hook.")
     parser.add_argument("--rev-range", default="", help="Optional explicit git rev-list range to scan.")
+    parser.add_argument("remote_name", nargs="?", default="", help=argparse.SUPPRESS)
+    parser.add_argument("remote_url", nargs="?", default="", help=argparse.SUPPRESS)
     return parser
 
 
