@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: photo-shelf-public
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PHOTO_STORAGE
+        value: webdav
+      - key: PUBLIC_SITE_ONLY
+        value: "true"
+      - key: MAX_UPLOAD_MB
+        value: "50"
+      - key: WEBDAV_REMOTE_DIR
+        value: photo-wall
+      - key: WEBDAV_METADATA_REMOTE_NAME
+        value: .photo-metadata.json
+      - key: WEBDAV_BASE_URL
+        sync: false
+      - key: WEBDAV_USERNAME
+        sync: false
+      - key: WEBDAV_PASSWORD
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

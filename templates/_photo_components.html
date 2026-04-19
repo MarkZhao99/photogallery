@@ -1,0 +1,96 @@
+{% macro photo_card(photo, editable=False, collage_slot="collage-tile-standard") -%}
+<article class="photo-card collage-tile {{ collage_slot }}{% if editable %} editable-photo-card{% else %} public-photo-card{% endif %}" data-collage-slot="{{ collage_slot }}" data-layout-orientation="{{ photo.layout_orientation or 'square' }}" data-layout-ratio="{{ photo.layout_ratio or 1 }}"{% if editable %} data-photo-name="{{ photo.name }}" data-photo-country="{{ photo.country }}" data-photo-title="{{ photo.title }}"{% endif %}>
+  {% if editable %}
+  <button
+    class="edit-photo-button"
+    type="button"
+    data-action="edit-photo"
+    data-photo-name="{{ photo.name }}"
+    data-photo-country="{{ photo.country }}"
+    data-photo-title="{{ photo.title }}"
+  >
+    编辑资料
+  </button>
+  {% endif %}
+
+  <button
+    class="photo-view-button"
+    type="button"
+    data-action="open-lightbox"
+    data-image-url="{{ photo.preview_url or photo.url }}"
+    data-download-url="{{ photo.download_url or photo.url }}"
+    data-image-alt="{{ photo.title or photo.name }}"
+  >
+    <img
+      src="{{ photo.card_image_url or photo.preview_url or photo.url }}"
+      {% if photo.card_image_srcset %}srcset="{{ photo.card_image_srcset }}"{% endif %}
+      {% if photo.card_image_sizes %}sizes="{{ photo.card_image_sizes }}"{% endif %}
+      alt="{{ photo.title or photo.name }}"
+      loading="lazy"
+      decoding="async"
+    >
+    <span class="photo-view-hint">查看大图</span>
+    <span class="photo-subtitle photo-card-caption" data-photo-caption>{{ photo.title or photo.name }}</span>
+  </button>
+</article>
+{%- endmacro %}
+
+{% macro collage_slot(photo, photo_index) -%}
+{%- if photo.collage_slot -%}
+{{- photo.collage_slot -}}
+{%- else -%}
+{%- set orientation = (photo.layout_orientation or "square")|lower -%}
+{%- if orientation == "landscape" and photo_index % 3 == 0 -%}
+collage-tile-wide
+{%- elif orientation == "portrait" and photo_index % 3 == 1 -%}
+collage-tile-tall
+{%- else -%}
+collage-tile-standard
+{%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro country_intro(group, sequence) -%}
+<div class="country-header">
+  <p class="country-sequence">{{ "%02d"|format(sequence) }}</p>
+  <div class="country-heading">
+    <p class="country-label">Collection</p>
+    <h3>{{ group.country }}</h3>
+    <div class="country-intro">
+      {% if group.preview_note or group.detail_url %}
+      <div class="country-intro-meta">
+        {% if group.preview_note %}
+        <span class="country-preview-note">{{ group.preview_note }}</span>
+        {% endif %}
+        {% if group.detail_url %}
+        <a class="country-detail-link" href="{{ group.detail_url }}">进入国家章节</a>
+        {% endif %}
+      </div>
+      {% endif %}
+      <p class="country-summary">{{ group.short_description }}</p>
+      <button class="country-intro-toggle" type="button" data-country-intro-toggle aria-expanded="false">展开导览</button>
+      <div class="country-detail" data-country-intro-detail hidden>
+        <p class="country-detail-copy">{{ group.long_description }}</p>
+      </div>
+    </div>
+  </div>
+  <p class="country-count">{{ group.count }} 幅作品</p>
+</div>
+{%- endmacro %}
+
+{% macro lightbox_dialog() -%}
+<dialog id="lightbox-dialog" class="lightbox-dialog">
+  <div class="lightbox-shell">
+    <button type="button" class="dialog-close lightbox-close" id="close-lightbox-button" aria-label="关闭">×</button>
+    <div class="lightbox-actions">
+      <button id="lightbox-wallpaper-button" class="lightbox-wallpaper-button" type="button">检测桌面助手中...</button>
+      <a id="lightbox-download-button" class="lightbox-download-button" href="#" download>下载原图</a>
+      <p id="lightbox-current-image" class="lightbox-current-image"></p>
+      <p id="lightbox-wallpaper-status" class="lightbox-wallpaper-status" aria-live="polite"></p>
+      <p id="lightbox-helper-text" class="lightbox-helper-text">浏览器不能直接修改系统壁纸，可先下载这张图再手动设为壁纸。</p>
+      <a class="lightbox-guide-link" href="#wallpaper-helper-guide">查看桌面助手下载与安装教程</a>
+    </div>
+    <img id="lightbox-image" class="lightbox-image" alt="">
+  </div>
+</dialog>
+{%- endmacro %}

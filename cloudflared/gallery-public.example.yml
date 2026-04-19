@@ -1,0 +1,7 @@
+tunnel: REPLACE_WITH_YOUR_TUNNEL_UUID
+credentials-file: /Users/mark/.cloudflared/REPLACE_WITH_YOUR_TUNNEL_UUID.json
+
+ingress:
+  - hostname: gallery.example.com
+    service: http://127.0.0.1:5002
+  - service: http_status:404

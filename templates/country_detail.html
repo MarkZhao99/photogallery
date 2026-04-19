@@ -1,0 +1,53 @@
+{% from "_photo_components.html" import collage_slot, country_intro, lightbox_dialog, photo_card %}
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ country }} · 国家章节</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=static_asset_version('style.css')) }}">
+  </head>
+  <body class="public-page country-detail-page">
+    <main class="layout">
+      <header class="site-header panel-surface">
+        <a class="brandmark" href="{{ url_for('public_gallery') }}">
+          <span class="brandmark-kicker">Photo Shelf</span>
+          <span class="brandmark-title">Open Gallery</span>
+        </a>
+
+        <nav class="site-nav" aria-label="站点导航">
+          <a class="nav-link" href="{{ url_for('public_gallery') }}">返回公开展厅</a>
+          <span class="nav-link is-active">{{ country }}</span>
+        </nav>
+      </header>
+
+      <section class="catalog-shell panel-surface public-catalog country-detail-shell">
+        <div class="catalog-heading country-detail-heading">
+          <div>
+            <p class="section-kicker">Country Chapter</p>
+            <h1>{{ country }}</h1>
+          </div>
+          <p class="catalog-note">这里收录该国家章节的完整照片。首页只保留少量精选图，进入这里后再完整展开城市、地标与风景线索。</p>
+        </div>
+
+        <div class="country-detail-actions">
+          <a class="action-link" href="{{ url_for('public_gallery') }}">返回公开展厅</a>
+        </div>
+
+        <section class="country-section country-section-full">
+          {{ country_intro(group, 1) }}
+
+          <div class="gallery-grid collage-grid">
+            {% for photo in group.photos %}
+            {{ photo_card(photo, collage_slot=photo.collage_slot or collage_slot(photo, loop.index0)) }}
+            {% endfor %}
+          </div>
+        </section>
+      </section>
+    </main>
+
+    {{ lightbox_dialog() }}
+    <script src="{{ url_for('static', filename='country-intros.js', v=static_asset_version('country-intros.js')) }}"></script>
+    <script src="{{ url_for('static', filename='photo-lightbox.js', v=static_asset_version('photo-lightbox.js') ) }}"></script>
+  </body>
+</html>

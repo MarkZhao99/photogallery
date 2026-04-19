@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>后台登录 · 世界照片图录</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=static_asset_version('style.css')) }}">
+  </head>
+  <body class="login-page">
+    <main class="layout login-layout">
+      <section class="login-shell panel-surface">
+        <div class="login-copy">
+          <p class="eyebrow">Private Access</p>
+          <h1>后台管理只对你开放。</h1>
+          <p class="intro">
+            公开访客只能查看展示页。输入后台密码后，才可以上传照片、调整国家分区和编辑作品标题。
+          </p>
+
+          <div class="hero-tags" aria-label="后台能力">
+            <span class="tag-chip">上传照片</span>
+            <span class="tag-chip">编辑资料</span>
+            <span class="tag-chip">同步归档</span>
+          </div>
+        </div>
+
+        <div class="login-card">
+          <p class="section-kicker">Admin Login</p>
+          <h2>输入后台账号</h2>
+
+          {% if password_missing %}
+          <p class="form-message error-message">当前还没有配置 `ADMIN_PASSWORD`，请先在 `.env` 中设置后台账号信息。</p>
+          {% else %}
+          <form class="login-form" method="post" action="/admin/login">
+            <input type="hidden" name="next" value="{{ next_url }}">
+
+            <label class="country-field" for="username-input">
+              <span>用户名</span>
+              <input id="username-input" name="username" type="text" placeholder="输入后台用户名" value="{{ request.form.get('username', '') }}" required autofocus>
+            </label>
+
+            <label class="country-field" for="password-input">
+              <span>后台密码</span>
+              <input id="password-input" name="password" type="password" placeholder="输入你的后台密码" required>
+            </label>
+
+            {% if error %}
+            <p class="form-message error-message">{{ error }}</p>
+            {% endif %}
+
+            <button type="submit">进入后台</button>
+          </form>
+          {% endif %}
+
+          <p class="login-note">后台用户名已设置为 <strong>{{ admin_username }}</strong>。公开展示页仍可直接访问，但不会出现后台入口。</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

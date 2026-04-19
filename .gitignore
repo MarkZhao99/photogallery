@@ -1,0 +1,26 @@
+# Local environment
+.env
+.venv/
+.superpowers/
+*.code-workspace
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pyre/
+.mypy_cache/
+
+# Runtime and generated files
+.runtime/
+.preview-cache/
+*.log
+
+# Local storage and uploads
+uploads/
+
+# Locally installed helper binaries
+tools/cloudflared
+
+# OS cruft
+.DS_Store

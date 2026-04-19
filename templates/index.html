@@ -1,0 +1,1122 @@
+{% from "_photo_components.html" import collage_slot, country_intro, lightbox_dialog, photo_card %}
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>世界照片图录 · 后台管理</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=static_asset_version('style.css')) }}">
+  </head>
+  <body class="admin-page">
+    <main class="layout">
+      <header class="site-header panel-surface">
+        <a class="brandmark" href="/admin">
+          <span class="brandmark-kicker">Private Console</span>
+          <span class="brandmark-title">World Photo Archive</span>
+        </a>
+
+        <nav class="site-nav" aria-label="站点导航">
+          <span class="nav-link nav-user">用户 {{ admin_username }}</span>
+          <a class="nav-link is-active" href="/admin">后台管理</a>
+          <a class="nav-link" href="/">公开展厅</a>
+          <form class="nav-form" action="/admin/logout" method="post">
+            <button class="nav-link nav-button" type="submit">退出登录</button>
+          </form>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy panel-surface">
+          <div class="hero-top">
+            <p class="eyebrow">Owner Only</p>
+            <h1>这是一套只属于你的照片后台。</h1>
+            <p class="intro">
+              只有登录后的后台会出现上传、归档和编辑功能。公开访客只能浏览作品页，不能直接进入这里，也不能调用上传或修改接口。
+            </p>
+
+            <div class="hero-tags" aria-label="当前国家分区">
+              {% for group in groups[:5] %}
+              <span class="tag-chip">{{ group.country }}</span>
+              {% else %}
+              <span class="tag-chip">等待第一组馆藏</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="hero-footer">
+            <div class="hero-stats">
+              <article>
+                <span class="stat-value" id="country-count">{{ groups|length }}</span>
+                <span class="stat-label">国家分区</span>
+              </article>
+              <article>
+                <span class="stat-value" id="photo-count">{{ photos|length }}</span>
+                <span class="stat-label">作品数量</span>
+              </article>
+            </div>
+
+            <div class="hero-links">
+              <a class="action-link primary-link" href="#gallery-groups">浏览馆藏</a>
+              <a class="action-link" href="/">查看公开展厅</a>
+            </div>
+          </div>
+        </div>
+
+        <aside class="public-note panel-surface auto-metadata-panel" aria-label="自动识别队列状态">
+          <div class="public-note-header">
+            <p class="section-kicker">Auto Metadata</p>
+            <h2>自动识别队列</h2>
+            <p>新上传图片会先进入 `pending`，随后由本机短进程异步识别并补全标题、地点和场景摘要。</p>
+          </div>
+          <div class="public-note-list auto-metadata-stats">
+            <article class="public-note-item">
+              <span class="note-index" id="auto-pending-count">{{ auto_metadata_status.pending_count }}</span>
+              <div class="note-copy">
+                <strong>待处理</strong>
+                <p>等待 worker 认领的图片数量。</p>
+              </div>
+            </article>
+            <article class="public-note-item">
+              <span class="note-index" id="auto-processing-count">{{ auto_metadata_status.processing_count }}</span>
+              <div class="note-copy">
+                <strong>处理中</strong>
+                <p id="auto-processing-countries">{{ auto_metadata_status.processing_countries|join('、') or '当前没有正在运行的国家批次。' }}</p>
+              </div>
+            </article>
+            <article class="public-note-item">
+              <span class="note-index" id="auto-review-count">{{ auto_metadata_status.review_count }}</span>
+              <div class="note-copy">
+                <strong>需复核</strong>
+                <p id="auto-last-error">{{ auto_metadata_status.last_error or '当前没有最近错误。' }}</p>
+              </div>
+            </article>
+          </div>
+        </aside>
+
+        <form id="upload-form" class="upload-card panel-surface" data-max-upload-mb="{{ max_upload_mb }}">
+          <div class="upload-heading">
+            <p class="section-kicker">Archive Intake</p>
+            <h2>批量导入作品</h2>
+            <span>上传和编辑都仅在后台开放。现在可以拖拽照片、导入整个文件夹，并在提交前检查这次批量导入的文件列表。提交时会逐张导入，避免整批请求过大。</span>
+          </div>
+
+          <section class="batch-import-panel" aria-labelledby="batch-import-title">
+            <div class="batch-import-header">
+              <div>
+                <p class="upload-note-title" id="batch-import-title">导入面板</p>
+                <p class="batch-import-copy">支持多选、拖拽导入，也支持按文件夹读取照片后一次提交。</p>
+              </div>
+              <button type="button" class="secondary-button upload-clear-button" id="clear-selection-button">清空选择</button>
+            </div>
+
+            <input id="photo-input" name="photos" type="file" accept="image/*" multiple hidden>
+            <input id="folder-input" type="file" accept="image/*" multiple webkitdirectory directory hidden>
+
+            <div id="upload-dropzone" class="upload-dropzone" tabindex="0" role="button" aria-label="拖拽或选择照片">
+              <p class="dropzone-title">拖拽照片到这里</p>
+              <p class="dropzone-copy">或者使用下面的按钮从本地多选照片、导入整个文件夹。</p>
+              <div class="dropzone-actions">
+                <button type="button" class="secondary-button upload-action-button" id="pick-photos-button">选择照片</button>
+                <button type="button" class="secondary-button upload-action-button" id="pick-folder-button">导入文件夹</button>
+              </div>
+            </div>
+
+            <div class="selection-summary">
+              <p class="selection-summary-label">当前选择</p>
+              <p id="selection-stats" class="selection-summary-value">尚未选择照片</p>
+            </div>
+
+            <div class="batch-country-toolbar" aria-label="批量填写国家">
+              <label class="batch-country-field" for="batch-country-input">
+                <span>批量填充国家</span>
+                <input id="batch-country-input" type="text" placeholder="例如：日本、冰岛、法国">
+              </label>
+              <button type="button" class="secondary-button upload-apply-button" id="apply-country-button">填充到所有已选照片</button>
+            </div>
+
+            <ul id="selected-files" class="selected-files" aria-live="polite">
+              <li class="selected-files-empty">还没有加入待导入照片。你可以多次选择文件，系统会自动合并去重，并在列表中为每张照片填写国家。</li>
+            </ul>
+          </section>
+
+          <button type="submit">加入馆藏</button>
+
+          <div class="upload-note" aria-label="录入提示">
+            <p class="upload-note-title">后台限制</p>
+            <div class="upload-note-grid">
+              <span>只有登录后可上传</span>
+              <span>只有登录后可编辑</span>
+              <span>支持拖拽和文件夹导入</span>
+              <span>支持一次导入多张照片</span>
+              <span>公开访客只能浏览展示页</span>
+            </div>
+          </div>
+
+          <p id="status" class="status">图片将保留原始比例展示。先把照片加入待导入列表，再为每张照片填写对应的拍摄国家后统一提交。系统会逐张导入，当前单张上限约 {{ max_upload_mb }} MB。</p>
+        </form>
+      </section>
+
+      <section class="catalog-shell panel-surface">
+        <div class="catalog-heading">
+          <div>
+            <p class="section-kicker">Collection Map</p>
+            <h2>按国家分区陈列</h2>
+          </div>
+          <p class="catalog-note">管理页和公开页使用同一套图片展示方式；每个国家章节下方的导览文字会依据该分区照片内容自动整理，并在上传或改动国家后同步更新。</p>
+        </div>
+
+        <div id="gallery-groups" class="gallery-groups">
+          {% for group in groups %}
+          <section class="country-section">
+            {{ country_intro(group, loop.index) }}
+
+            <div class="gallery-grid collage-grid">
+              {% for photo in group.photos %}
+              {{ photo_card(photo, editable=True, collage_slot=photo.collage_slot or collage_slot(photo, loop.index0)) }}
+              {% endfor %}
+            </div>
+          </section>
+          {% else %}
+          <section class="empty-state">
+            <p class="section-kicker">Archive Empty</p>
+            <h3>馆藏里还没有照片</h3>
+            <p>上传第一张照片，并为待导入照片填写拍摄国家。它会立刻出现在这里，也会同步进入公开展厅。</p>
+            <a class="action-link primary-link" href="#upload-form">开始录入</a>
+          </section>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    {{ lightbox_dialog() }}
+
+    <dialog id="edit-dialog" class="edit-dialog">
+      <form id="edit-form" class="edit-form" method="dialog">
+        <div class="edit-header">
+          <div>
+            <p class="section-kicker">Edit Photo</p>
+            <h3>修改照片资料</h3>
+          </div>
+          <button type="button" class="dialog-close" id="close-dialog-button" aria-label="关闭">×</button>
+        </div>
+
+        <input type="hidden" id="edit-photo-name" name="name">
+
+        <label class="country-field" for="edit-title-input">
+          <span>照片标题</span>
+          <input id="edit-title-input" name="title" type="text" placeholder="例如：东京地铁口的雨夜">
+        </label>
+
+        <label class="country-field" for="edit-country-input">
+          <span>拍摄国家</span>
+          <input id="edit-country-input" name="country" type="text" placeholder="例如：日本" required>
+        </label>
+
+        <p id="edit-status" class="status dialog-status">修改后会立即更新分区与公开展厅中的展示信息。</p>
+
+        <div class="dialog-actions">
+          <button type="button" class="danger-button" id="delete-photo-button">彻底删除</button>
+          <button type="button" class="secondary-button" id="cancel-dialog-button">取消</button>
+          <button type="submit">保存修改</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="country-section-template">
+      <section class="country-section">
+        <div class="country-header">
+          <p class="country-sequence"></p>
+          <div class="country-heading">
+            <p class="country-label">Collection</p>
+            <h3></h3>
+            <div class="country-intro">
+              <p class="country-summary"></p>
+              <button class="country-intro-toggle" type="button" data-country-intro-toggle aria-expanded="false">展开导览</button>
+              <div class="country-detail" data-country-intro-detail hidden>
+                <p class="country-detail-copy"></p>
+              </div>
+            </div>
+          </div>
+          <p class="country-count"></p>
+        </div>
+        <div class="gallery-grid collage-grid"></div>
+      </section>
+    </template>
+
+    <template id="photo-card-template">
+      {{ photo_card(
+        {
+          "name": "",
+          "country": "",
+          "title": "",
+          "preview_url": "",
+          "download_url": "",
+          "url": "",
+          "card_image_url": "",
+          "card_image_srcset": "",
+          "card_image_sizes": "",
+          "layout_orientation": "square",
+          "layout_ratio": 1,
+        },
+        editable=True
+      ) }}
+    </template>
+
+    <script>
+      const form = document.getElementById("upload-form");
+      const input = document.getElementById("photo-input");
+      const folderInput = document.getElementById("folder-input");
+      const uploadDropzone = document.getElementById("upload-dropzone");
+      const pickPhotosButton = document.getElementById("pick-photos-button");
+      const pickFolderButton = document.getElementById("pick-folder-button");
+      const clearSelectionButton = document.getElementById("clear-selection-button");
+      const selectedFilesList = document.getElementById("selected-files");
+      const selectionStats = document.getElementById("selection-stats");
+      const batchCountryInput = document.getElementById("batch-country-input");
+      const applyCountryButton = document.getElementById("apply-country-button");
+      const statusText = document.getElementById("status");
+      const groupsRoot = document.getElementById("gallery-groups");
+      const photoCount = document.getElementById("photo-count");
+      const countryCount = document.getElementById("country-count");
+      const countryTemplate = document.getElementById("country-section-template");
+      const cardTemplate = document.getElementById("photo-card-template");
+      const autoPendingCount = document.getElementById("auto-pending-count");
+      const autoProcessingCount = document.getElementById("auto-processing-count");
+      const autoReviewCount = document.getElementById("auto-review-count");
+      const autoProcessingCountries = document.getElementById("auto-processing-countries");
+      const autoLastError = document.getElementById("auto-last-error");
+      const editDialog = document.getElementById("edit-dialog");
+      const editForm = document.getElementById("edit-form");
+      const editStatus = document.getElementById("edit-status");
+      const editPhotoNameInput = document.getElementById("edit-photo-name");
+      const editTitleInput = document.getElementById("edit-title-input");
+      const editCountryInput = document.getElementById("edit-country-input");
+      const closeDialogButton = document.getElementById("close-dialog-button");
+      const cancelDialogButton = document.getElementById("cancel-dialog-button");
+      const deletePhotoButton = document.getElementById("delete-photo-button");
+      const collageSlotClasses = ["collage-tile-standard", "collage-tile-wide", "collage-tile-tall"];
+      const maxUploadMb = Number(form.dataset.maxUploadMb || "0");
+      const maxUploadBytes = maxUploadMb > 0 ? maxUploadMb * 1024 * 1024 : 0;
+      const baseStatusText = `图片将保留原始比例展示。先把照片加入待导入列表，再为每张照片填写对应的拍摄国家后统一提交。系统会逐张导入，当前单张上限约 ${maxUploadMb || "?"} MB。`;
+      let selectedFiles = [];
+      let uploadInProgress = false;
+
+      function buildPhotoTitle(photo) {
+        return (photo.title || "").trim() || "未命名作品";
+      }
+
+      function normalizeLayoutOrientation(value) {
+        const orientation = String(value || "").trim().toLowerCase();
+        if (orientation === "landscape" || orientation === "portrait" || orientation === "square") {
+          return orientation;
+        }
+        return "square";
+      }
+
+      function normalizeCollageSlot(value) {
+        const slot = String(value || "").trim();
+        return collageSlotClasses.includes(slot) ? slot : "";
+      }
+
+      function buildShortDescription(group) {
+        return (group.short_description || group.description || "").trim();
+      }
+
+      function buildLongDescription(group) {
+        return (group.long_description || "").trim();
+      }
+
+      function formatDescriptionUpdateStatus(updateResult) {
+        if (!updateResult || typeof updateResult !== "object") {
+          return "";
+        }
+
+        const updated = Array.isArray(updateResult.updated) ? updateResult.updated : [];
+        const failed = Array.isArray(updateResult.failed) ? updateResult.failed : [];
+        const message = typeof updateResult.message === "string" ? updateResult.message.trim() : "";
+
+        if (updated.length) {
+          const countries = updated.map((item) => item.country).filter(Boolean).join("、");
+          return `已更新 ${countries} 的国家介绍。`;
+        }
+
+        if (failed.length) {
+          return `国家介绍未更新：${failed[0].error || "生成失败。"}`
+        }
+
+        if (message) {
+          return message;
+        }
+
+        return "";
+      }
+
+      function renderAutoMetadataStatus(status) {
+        if (!status || typeof status !== "object") {
+          return;
+        }
+        if (autoPendingCount) {
+          autoPendingCount.textContent = `${status.pending_count || 0}`;
+        }
+        if (autoProcessingCount) {
+          autoProcessingCount.textContent = `${status.processing_count || 0}`;
+        }
+        if (autoReviewCount) {
+          autoReviewCount.textContent = `${status.review_count || 0}`;
+        }
+        if (autoProcessingCountries) {
+          const countries = Array.isArray(status.processing_countries) ? status.processing_countries.filter(Boolean) : [];
+          autoProcessingCountries.textContent = countries.length ? countries.join("、") : "当前没有正在运行的国家批次。";
+        }
+        if (autoLastError) {
+          autoLastError.textContent = status.last_error || "当前没有最近错误。";
+        }
+      }
+
+      function buildFileKey(file) {
+        return [
+          file.name,
+          file.size,
+          file.lastModified,
+          file.webkitRelativePath || "",
+        ].join("::");
+      }
+
+      function isAllowedFile(file) {
+        const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+        const filename = (file.name || "").toLowerCase();
+        return allowedExtensions.some((ext) => filename.endsWith(ext));
+      }
+
+      function formatFileSize(size) {
+        if (!Number.isFinite(size) || size <= 0) {
+          return "0 B";
+        }
+
+        const units = ["B", "KB", "MB", "GB"];
+        let value = size;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+          value /= 1024;
+          unitIndex += 1;
+        }
+
+        const precision = value >= 100 || unitIndex === 0 ? 0 : 1;
+        return `${value.toFixed(precision)} ${units[unitIndex]}`;
+      }
+
+      function normalizeUiErrorMessage(source, fallback = "操作失败，请重试。") {
+        const rawMessage = typeof source === "string" ? source : source?.message;
+        const message = String(rawMessage || "").trim();
+        if (!message) {
+          return fallback;
+        }
+
+        const lowerMessage = message.toLowerCase();
+        if (message.includes("The string did not match the expected pattern")) {
+          return maxUploadMb
+            ? `请求格式异常，或图片超过 ${maxUploadMb} MB 限制，请检查后重试。`
+            : "请求格式异常，请检查后重试。";
+        }
+        if (message.includes("Request Entity Too Large") || lowerMessage.includes("413")) {
+          return maxUploadMb
+            ? `单张照片或单次请求不能超过 ${maxUploadMb} MB，请压缩图片后重试。`
+            : "上传内容过大，请压缩图片后重试。";
+        }
+        if (lowerMessage.includes("failed to fetch") || lowerMessage.includes("load failed")) {
+          return "连接服务器失败，请确认后台服务正在运行后重试。";
+        }
+        if (message.includes("Unexpected token <")) {
+          return "服务器返回了异常页面，请稍后重试。";
+        }
+
+        return message;
+      }
+
+      async function readApiResponse(response) {
+        const contentType = response.headers.get("content-type") || "";
+
+        if (contentType.includes("application/json")) {
+          try {
+            return await response.json();
+          } catch (error) {
+            return { error: "服务器返回了无效数据，请重试。" };
+          }
+        }
+
+        const text = await response.text();
+        if (response.status === 413) {
+          return {
+            error: maxUploadMb
+              ? `单张照片或单次请求不能超过 ${maxUploadMb} MB，请压缩图片后重试。`
+              : "上传内容过大，请压缩图片后重试。",
+            raw: text,
+          };
+        }
+
+        const compactText = text.replace(/\s+/g, " ").trim();
+        return {
+          error: normalizeUiErrorMessage(compactText, `请求失败（${response.status}）`),
+          raw: text,
+        };
+      }
+
+      function updateUploadControls() {
+        const hasFiles = selectedFiles.length > 0;
+
+        clearSelectionButton.disabled = uploadInProgress || !hasFiles;
+        applyCountryButton.disabled = uploadInProgress || !hasFiles;
+        pickPhotosButton.disabled = uploadInProgress;
+        pickFolderButton.disabled = uploadInProgress;
+        input.disabled = uploadInProgress;
+        folderInput.disabled = uploadInProgress;
+        batchCountryInput.disabled = uploadInProgress;
+        uploadDropzone.classList.toggle("is-disabled", uploadInProgress);
+        uploadDropzone.classList.toggle("has-files", hasFiles);
+
+        const submitButton = form.querySelector("button[type='submit']");
+        submitButton.disabled = uploadInProgress || !hasFiles;
+        submitButton.textContent = uploadInProgress ? "正在导入..." : "加入馆藏";
+      }
+
+      function findSelectedCountryInput(fileKey) {
+        return Array.from(
+          selectedFilesList.querySelectorAll("[data-action='update-selected-country']")
+        ).find((field) => field.dataset.fileKey === fileKey);
+      }
+
+      function renderSelectedFiles() {
+        const totalSize = selectedFiles.reduce((sum, entry) => sum + entry.file.size, 0);
+
+        if (!selectedFiles.length) {
+          selectionStats.textContent = "尚未选择照片";
+          selectedFilesList.innerHTML = '<li class="selected-files-empty">还没有加入待导入照片。你可以多次选择文件，系统会自动合并去重，并在列表中为每张照片填写国家。</li>';
+          updateUploadControls();
+          return;
+        }
+
+        selectionStats.textContent = `已选择 ${selectedFiles.length} 张照片，共 ${formatFileSize(totalSize)}`;
+        selectedFilesList.innerHTML = "";
+
+        for (const entry of selectedFiles) {
+          const displayPath = entry.file.webkitRelativePath || entry.file.name;
+          const item = document.createElement("li");
+          item.className = "selected-file-item";
+
+          const copy = document.createElement("div");
+          copy.className = "selected-file-copy";
+
+          const name = document.createElement("p");
+          name.className = "selected-file-name";
+          name.textContent = displayPath;
+
+          const meta = document.createElement("p");
+          meta.className = "selected-file-meta";
+          meta.textContent = formatFileSize(entry.file.size);
+
+          copy.append(name, meta);
+
+          const controls = document.createElement("div");
+          controls.className = "selected-file-controls";
+
+          const countryField = document.createElement("label");
+          countryField.className = "selected-file-country";
+
+          const countryLabel = document.createElement("span");
+          countryLabel.textContent = "拍摄国家";
+
+          const countryValue = document.createElement("input");
+          countryValue.type = "text";
+          countryValue.placeholder = "填写这张照片的国家";
+          countryValue.value = entry.country;
+          countryValue.dataset.action = "update-selected-country";
+          countryValue.dataset.fileKey = entry.key;
+          countryValue.disabled = uploadInProgress;
+
+          countryField.append(countryLabel, countryValue);
+
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.className = "selected-file-remove";
+          removeButton.dataset.action = "remove-selected-file";
+          removeButton.dataset.fileKey = entry.key;
+          removeButton.setAttribute("aria-label", `移除 ${displayPath}`);
+          removeButton.textContent = "移除";
+
+          controls.append(countryField, removeButton);
+          item.append(copy, controls);
+          selectedFilesList.appendChild(item);
+        }
+
+        updateUploadControls();
+      }
+
+      function resetSelectedFiles() {
+        selectedFiles = [];
+        input.value = "";
+        folderInput.value = "";
+        batchCountryInput.value = "";
+        renderSelectedFiles();
+      }
+
+      function setAllSelectedCountries(country) {
+        selectedFiles = selectedFiles.map((entry) => ({
+          ...entry,
+          country,
+        }));
+        renderSelectedFiles();
+      }
+
+      function addFiles(files) {
+        if (!files.length) {
+          return;
+        }
+
+        const existingKeys = new Set(selectedFiles.map((entry) => entry.key));
+        const accepted = [];
+        const rejected = [];
+        const defaultCountry = batchCountryInput.value.trim();
+
+        for (const file of files) {
+          if (!isAllowedFile(file)) {
+            rejected.push(file.name || "未命名文件");
+            continue;
+          }
+
+          const fileKey = buildFileKey(file);
+          if (existingKeys.has(fileKey)) {
+            continue;
+          }
+
+          existingKeys.add(fileKey);
+          accepted.push({
+            file,
+            key: fileKey,
+            country: defaultCountry,
+          });
+        }
+
+        selectedFiles = [...selectedFiles, ...accepted];
+        renderSelectedFiles();
+
+        if (accepted.length && rejected.length) {
+          statusText.textContent = `已加入 ${accepted.length} 张照片，${rejected.length} 个文件格式不支持。请在列表中确认每张照片的国家。`;
+        } else if (accepted.length) {
+          statusText.textContent = `已加入待导入列表：${selectedFiles.length} 张照片。请为每张照片填写对应国家。`;
+        } else if (rejected.length) {
+          statusText.textContent = "选择的文件里没有可导入的图片格式。";
+        }
+      }
+
+      function ensureAuthorized(response, data) {
+        if (response.status === 401) {
+          window.location.href = data.login_url || "/admin/login";
+          throw new Error(data.error || "登录已失效，请重新登录。");
+        }
+      }
+
+      async function refreshAfterMutation() {
+        try {
+          await refreshPhotos();
+        } catch (error) {
+          window.location.reload();
+        }
+      }
+
+      function renderEmptyState() {
+        groupsRoot.innerHTML = `
+          <section class="empty-state">
+            <p class="section-kicker">Archive Empty</p>
+            <h3>馆藏里还没有照片</h3>
+            <p>上传第一张照片，并为待导入照片填写拍摄国家。它会立刻出现在这里，也会同步进入公开展厅。</p>
+            <a class="action-link primary-link" href="#upload-form">开始录入</a>
+          </section>
+        `;
+      }
+
+      function fillCard(cardElement, photo) {
+        const editButton = cardElement.querySelector(".edit-photo-button");
+        const viewButton = cardElement.querySelector(".photo-view-button");
+        const image = cardElement.querySelector("img");
+        const captionElement = cardElement.querySelector("[data-photo-caption]");
+        const title = buildPhotoTitle(photo);
+
+        cardElement.dataset.photoName = photo.name;
+        cardElement.dataset.photoCountry = photo.country;
+        cardElement.dataset.photoTitle = photo.title || "";
+        cardElement.dataset.layoutOrientation = normalizeLayoutOrientation(photo.layout_orientation);
+        cardElement.dataset.layoutRatio = String(photo.layout_ratio || "");
+
+        editButton.dataset.photoName = photo.name;
+        editButton.dataset.photoCountry = photo.country;
+        editButton.dataset.photoTitle = photo.title || "";
+
+        viewButton.dataset.imageUrl = photo.preview_url || photo.url;
+        viewButton.dataset.downloadUrl = photo.download_url || photo.url;
+        viewButton.dataset.imageAlt = title;
+        image.src = photo.card_image_url || photo.preview_url || photo.url;
+        image.srcset = photo.card_image_srcset || "";
+        image.sizes = photo.card_image_sizes || "";
+        image.decoding = "async";
+        image.alt = title;
+        if (captionElement) {
+          captionElement.textContent = title;
+        }
+      }
+
+      function collageSlotForPhoto(photo, photoIndex) {
+        const explicitSlot = normalizeCollageSlot(photo?.collage_slot);
+        if (explicitSlot) {
+          return explicitSlot;
+        }
+
+        const layoutOrientation = normalizeLayoutOrientation(photo?.layout_orientation);
+        if (layoutOrientation === "landscape" && photoIndex % 3 === 0) {
+          return "collage-tile-wide";
+        }
+        if (layoutOrientation === "portrait" && photoIndex % 3 === 1) {
+          return "collage-tile-tall";
+        }
+        return "collage-tile-standard";
+      }
+
+      function applyCollageSlot(cardElement, photo, photoIndex) {
+        const layoutOrientation = normalizeLayoutOrientation(photo?.layout_orientation || cardElement.dataset.layoutOrientation);
+        const collageSlot = collageSlotForPhoto(
+          {
+            collage_slot: photo?.collage_slot,
+            layout_orientation: layoutOrientation,
+          },
+          photoIndex,
+        );
+        cardElement.dataset.layoutOrientation = layoutOrientation;
+        cardElement.dataset.collageSlot = collageSlot;
+        for (const slot of collageSlotClasses) {
+          cardElement.classList.remove(slot);
+        }
+        cardElement.classList.add(collageSlot);
+      }
+
+      function renderGroups(groups) {
+        if (!groups.length) {
+          renderEmptyState();
+          photoCount.textContent = "0";
+          countryCount.textContent = "0";
+          return;
+        }
+
+        groupsRoot.innerHTML = "";
+        let totalPhotos = 0;
+
+        for (const [index, group] of groups.entries()) {
+          totalPhotos += group.photos.length;
+
+          const sectionFragment = countryTemplate.content.cloneNode(true);
+          const sectionElement = sectionFragment.querySelector(".country-section");
+
+          sectionElement.querySelector(".country-sequence").textContent = String(index + 1).padStart(2, "0");
+          sectionElement.querySelector("h3").textContent = group.country;
+          sectionElement.querySelector(".country-summary").textContent = buildShortDescription(group);
+          sectionElement.querySelector(".country-detail-copy").textContent = buildLongDescription(group);
+          const introToggle = sectionElement.querySelector("[data-country-intro-toggle]");
+          const introDetail = sectionElement.querySelector("[data-country-intro-detail]");
+          introToggle.setAttribute("aria-expanded", "false");
+          introToggle.textContent = "展开导览";
+          introDetail.hidden = true;
+          sectionElement.querySelector(".country-count").textContent = `${group.count} 幅作品`;
+
+          const grid = sectionElement.querySelector(".gallery-grid");
+          for (const [photoIndex, photo] of group.photos.entries()) {
+            const cardFragment = cardTemplate.content.cloneNode(true);
+            const cardElement = cardFragment.querySelector(".photo-card");
+            fillCard(cardElement, photo);
+            applyCollageSlot(cardElement, photo, photoIndex);
+            grid.appendChild(cardFragment);
+          }
+
+          groupsRoot.appendChild(sectionFragment);
+        }
+
+        photoCount.textContent = `${totalPhotos}`;
+        countryCount.textContent = `${groups.length}`;
+      }
+
+      async function refreshPhotos() {
+        const response = await fetch("/api/sync-storage", {
+          method: "POST",
+        });
+        const data = await readApiResponse(response);
+
+        ensureAuthorized(response, data);
+        if (!response.ok) {
+          throw new Error(data.error || "刷新馆藏失败。");
+        }
+
+        renderGroups(data.groups || []);
+        renderAutoMetadataStatus(data.auto_metadata_status || {});
+      }
+
+      function openEditDialog(photo) {
+        editPhotoNameInput.value = photo.name;
+        editTitleInput.value = photo.title || "";
+        editCountryInput.value = photo.country || "";
+        editStatus.textContent = `正在编辑：${photo.title || photo.name}`;
+        editDialog.showModal();
+      }
+
+      function closeEditDialog() {
+        if (editDialog.open) {
+          editDialog.close();
+        }
+        editForm.reset();
+        editStatus.textContent = "修改后会立即更新分区与公开展厅中的展示信息。";
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!selectedFiles.length) {
+          statusText.textContent = "请先选择至少一张照片。";
+          return;
+        }
+        const invalidEntry = selectedFiles.find((entry) => !entry.country.trim());
+        if (invalidEntry) {
+          statusText.textContent = "请为每张照片填写拍摄国家。";
+          const invalidInput = findSelectedCountryInput(invalidEntry.key);
+          invalidInput?.focus();
+          return;
+        }
+        const oversizedEntries = maxUploadBytes
+          ? selectedFiles.filter((entry) => entry.file.size > maxUploadBytes)
+          : [];
+        if (oversizedEntries.length) {
+          const oversizedNames = oversizedEntries.slice(0, 3).map((entry) => entry.file.name).join("、");
+          const suffix = oversizedEntries.length > 3 ? " 等文件" : "";
+          statusText.textContent = `以下照片超过单张 ${maxUploadMb} MB 限制：${oversizedNames}${suffix}。`;
+          return;
+        }
+
+        const batchSize = selectedFiles.length;
+        const entriesToUpload = selectedFiles.map((entry) => ({
+          ...entry,
+          country: entry.country.trim(),
+        }));
+
+        uploadInProgress = true;
+        updateUploadControls();
+        statusText.textContent = `准备逐张导入 ${batchSize} 张照片...`;
+
+        try {
+          const importedPhotos = [];
+          const failedUploads = [];
+
+          for (const [index, entry] of entriesToUpload.entries()) {
+            const payload = new FormData();
+            payload.append("photos", entry.file, entry.file.name);
+            payload.append("photo_keys", entry.key);
+            payload.append("photo_countries", entry.country);
+
+            statusText.textContent = `正在导入第 ${index + 1} / ${batchSize} 张：${entry.file.name}`;
+
+            const response = await fetch("/api/upload", {
+              method: "POST",
+              body: payload,
+            });
+            const data = await readApiResponse(response);
+
+            ensureAuthorized(response, data);
+            if (!response.ok) {
+              failedUploads.push({
+                filename: entry.file.name,
+                error: data.error || "上传失败。",
+              });
+              continue;
+            }
+
+            if (Array.isArray(data.photos) && data.photos.length) {
+              importedPhotos.push(...data.photos);
+            } else if (data.photo) {
+              importedPhotos.push(data.photo);
+            }
+
+            if (Array.isArray(data.failed) && data.failed.length) {
+              failedUploads.push(...data.failed);
+            }
+          }
+
+          if (!importedPhotos.length) {
+            const firstError = failedUploads[0]?.error || "上传失败。";
+            throw new Error(firstError);
+          }
+
+          const importedCountries = Array.from(new Set(importedPhotos.map((photo) => photo.country).filter(Boolean)));
+          const importedSummary =
+            importedCountries.length === 1
+              ? `${importedCountries[0]} 分区`
+              : `${importedCountries.length} 个国家分区`;
+          let descriptionSummary = "";
+
+          if (importedCountries.length) {
+            statusText.textContent = `已导入 ${importedPhotos.length} 张，正在更新对应国家的介绍文字...`;
+            const descriptionResponse = await fetch("/api/country-descriptions/refresh", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                countries: importedCountries,
+                photo_names: importedPhotos.map((photo) => photo.name).filter(Boolean),
+              }),
+            });
+            const descriptionData = await readApiResponse(descriptionResponse);
+
+            ensureAuthorized(descriptionResponse, descriptionData);
+            if (!descriptionResponse.ok) {
+              throw new Error(descriptionData.error || "国家介绍更新失败。");
+            }
+
+            descriptionSummary = formatDescriptionUpdateStatus(descriptionData.description_updates);
+          }
+
+          if (failedUploads.length) {
+            const failedNames = failedUploads.slice(0, 3).map((item) => item.filename).join("、");
+            const failedSuffix = failedNames ? ` 失败文件：${failedNames}` : "";
+            statusText.textContent = `已导入 ${importedPhotos.length} 张到 ${importedSummary}，${failedUploads.length} 张失败。${descriptionSummary}${failedSuffix}`;
+          } else {
+            statusText.textContent = `已导入 ${importedPhotos.length} 张到 ${importedSummary}。${descriptionSummary}`;
+          }
+
+          resetSelectedFiles();
+          renderAutoMetadataStatus((importedPhotos[0] && typeof importedPhotos[0] === "object") ? {} : {});
+          await refreshAfterMutation();
+        } catch (error) {
+          statusText.textContent = normalizeUiErrorMessage(error, "上传失败。");
+        } finally {
+          uploadInProgress = false;
+          updateUploadControls();
+        }
+      });
+
+      input.addEventListener("change", () => {
+        addFiles(Array.from(input.files || []));
+        input.value = "";
+      });
+
+      folderInput.addEventListener("change", () => {
+        addFiles(Array.from(folderInput.files || []));
+        folderInput.value = "";
+      });
+
+      pickPhotosButton.addEventListener("click", () => {
+        if (!uploadInProgress) {
+          input.click();
+        }
+      });
+
+      pickFolderButton.addEventListener("click", () => {
+        if (!uploadInProgress) {
+          folderInput.click();
+        }
+      });
+
+      clearSelectionButton.addEventListener("click", () => {
+        resetSelectedFiles();
+        statusText.textContent = baseStatusText;
+      });
+
+      applyCountryButton.addEventListener("click", () => {
+        const country = batchCountryInput.value.trim();
+        if (!selectedFiles.length) {
+          statusText.textContent = "请先选择至少一张照片。";
+          return;
+        }
+        if (!country) {
+          statusText.textContent = "请先填写要批量填充的国家。";
+          batchCountryInput.focus();
+          return;
+        }
+
+        setAllSelectedCountries(country);
+        statusText.textContent = `已为 ${selectedFiles.length} 张待导入照片填入 ${country}。`;
+      });
+
+      uploadDropzone.addEventListener("click", (event) => {
+        if (event.target.closest("button")) {
+          return;
+        }
+        if (!uploadInProgress) {
+          input.click();
+        }
+      });
+
+      uploadDropzone.addEventListener("keydown", (event) => {
+        if (uploadInProgress) {
+          return;
+        }
+
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          input.click();
+        }
+      });
+
+      uploadDropzone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        if (!uploadInProgress) {
+          uploadDropzone.classList.add("is-dragover");
+        }
+      });
+
+      uploadDropzone.addEventListener("dragleave", (event) => {
+        if (event.target === uploadDropzone) {
+          uploadDropzone.classList.remove("is-dragover");
+        }
+      });
+
+      uploadDropzone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        uploadDropzone.classList.remove("is-dragover");
+        if (uploadInProgress) {
+          return;
+        }
+
+        addFiles(Array.from(event.dataTransfer?.files || []));
+      });
+
+      selectedFilesList.addEventListener("click", (event) => {
+        const removeButton = event.target.closest("[data-action='remove-selected-file']");
+        if (!removeButton || uploadInProgress) {
+          return;
+        }
+
+        const targetKey = removeButton.dataset.fileKey;
+        selectedFiles = selectedFiles.filter((entry) => entry.key !== targetKey);
+        renderSelectedFiles();
+        statusText.textContent = selectedFiles.length ? `待导入列表还剩 ${selectedFiles.length} 张照片。` : baseStatusText;
+      });
+
+      selectedFilesList.addEventListener("input", (event) => {
+        const countryField = event.target.closest("[data-action='update-selected-country']");
+        if (!countryField || uploadInProgress) {
+          return;
+        }
+
+        const targetKey = countryField.dataset.fileKey;
+        selectedFiles = selectedFiles.map((entry) => {
+          if (entry.key !== targetKey) {
+            return entry;
+          }
+          return {
+            ...entry,
+            country: countryField.value,
+          };
+        });
+      });
+
+      groupsRoot.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-action='edit-photo']");
+        if (!button) {
+          return;
+        }
+        openEditDialog({
+          name: button.dataset.photoName,
+          title: button.dataset.photoTitle,
+          country: button.dataset.photoCountry,
+        });
+      });
+
+      editForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const name = editPhotoNameInput.value;
+        const title = editTitleInput.value.trim();
+        const country = editCountryInput.value.trim();
+
+        if (!country) {
+          editStatus.textContent = "请填写拍摄国家。";
+          editCountryInput.focus();
+          return;
+        }
+
+        editStatus.textContent = "正在保存修改...";
+
+        try {
+          const response = await fetch(`/api/photos/${encodeURIComponent(name)}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title, country }),
+          });
+          const data = await readApiResponse(response);
+
+          ensureAuthorized(response, data);
+          if (!response.ok) {
+            throw new Error(data.error || "更新失败。");
+          }
+
+          closeEditDialog();
+          const descriptionSummary = formatDescriptionUpdateStatus(data.description_updates);
+          statusText.textContent = `已更新到 ${data.photo.country} 分区。${descriptionSummary}`;
+          try {
+            renderGroups(data.groups || []);
+            renderAutoMetadataStatus(data.auto_metadata_status || {});
+          } catch (error) {
+            window.location.reload();
+          }
+        } catch (error) {
+          editStatus.textContent = normalizeUiErrorMessage(error, "更新失败。");
+        }
+      });
+
+      deletePhotoButton.addEventListener("click", async () => {
+        const name = editPhotoNameInput.value;
+        if (!name) {
+          editStatus.textContent = "没有找到要删除的照片。";
+          return;
+        }
+
+        const confirmed = window.confirm("确认删除这张照片？删除后将无法恢复，并会同时从后台与公开展厅中移除。");
+        if (!confirmed) {
+          return;
+        }
+
+        editStatus.textContent = "正在删除照片...";
+
+        try {
+          const response = await fetch(`/api/photos/${encodeURIComponent(name)}`, {
+            method: "DELETE",
+          });
+          const data = await readApiResponse(response);
+
+          ensureAuthorized(response, data);
+          if (!response.ok) {
+            throw new Error(data.error || "删除失败。");
+          }
+
+          closeEditDialog();
+          const descriptionSummary = formatDescriptionUpdateStatus(data.description_updates);
+          statusText.textContent = `已彻底删除该照片。${descriptionSummary}`;
+          try {
+            renderGroups(data.groups || []);
+            renderAutoMetadataStatus(data.auto_metadata_status || {});
+          } catch (error) {
+            window.location.reload();
+          }
+        } catch (error) {
+          editStatus.textContent = normalizeUiErrorMessage(error, "删除失败。");
+        }
+      });
+
+      closeDialogButton.addEventListener("click", closeEditDialog);
+      cancelDialogButton.addEventListener("click", closeEditDialog);
+      editDialog.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        closeEditDialog();
+      });
+
+      renderSelectedFiles();
+    </script>
+    <script src="{{ url_for('static', filename='country-intros.js', v=static_asset_version('country-intros.js')) }}"></script>
+    <script src="{{ url_for('static', filename='photo-lightbox.js', v=static_asset_version('photo-lightbox.js')) }}"></script>
+  </body>
+</html>

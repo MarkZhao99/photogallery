@@ -1,0 +1,222 @@
+{% from "_photo_components.html" import collage_slot, country_intro, lightbox_dialog, photo_card %}
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>摄影作品集 · 公开展厅</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=static_asset_version('style.css')) }}">
+  </head>
+  <body class="public-page">
+    <main class="layout">
+      <header class="site-header panel-surface">
+        <a class="brandmark" href="/">
+          <span class="brandmark-kicker">Photo Shelf</span>
+          <span class="brandmark-title">Open Gallery</span>
+        </a>
+
+        <nav class="site-nav" aria-label="站点导航">
+          <span class="nav-link is-active">公开展厅</span>
+          <a class="nav-link" href="#public-gallery-groups">国家分区</a>
+        </nav>
+      </header>
+
+      <section class="hero public-hero">
+        <div class="hero-copy panel-surface public-hero-copy">
+          <div class="hero-top">
+            <p class="eyebrow">Open Exhibition</p>
+            <p class="hero-context">Public Gallery · Vol. 01</p>
+            <h1>把旅途中停驻过的光，整理成一场可以缓慢漫游的展览。</h1>
+            <p class="intro intro-desktop">
+              这里不急着解释作品，也不让操作打断观看。照片按国家展开，保留原始画幅与呼吸感，让街角、天气和光线先于说明被看见。
+            </p>
+            <p class="intro intro-mobile">
+              按国家进入，直接看照片。点击任意画面即可放大，手机端只保留原图下载，把注意力留给画面本身。
+            </p>
+            <div class="hero-curatorial-note">
+              <span class="hero-note-label">展览前言</span>
+              <p>从不同地点带回来的，并不是完整叙事，而是抵达、停留与离开的片段。它们在这里被安静陈列，等待每一次重新观看。</p>
+            </div>
+
+            <div class="hero-tags" aria-label="本次展区">
+              {% for group in groups[:5] %}
+              <span class="tag-chip">{{ group.country }}</span>
+              {% else %}
+              <span class="tag-chip">等待首批作品</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="hero-footer">
+            <div class="hero-stats">
+              <article>
+                <span class="stat-value">{{ groups|length }}</span>
+                <span class="stat-label">国家章节</span>
+              </article>
+              <article>
+                <span class="stat-value">{{ photos|length }}</span>
+                <span class="stat-label">展出影像</span>
+              </article>
+            </div>
+
+            <div class="hero-links">
+              <a class="action-link primary-link" href="#public-gallery-groups">步入展厅</a>
+              <a class="action-link" href="#wallpaper-helper-guide">延伸收藏</a>
+            </div>
+          </div>
+        </div>
+
+        <aside class="public-note panel-surface">
+          <div class="public-note-header">
+            <p class="section-kicker">Curatorial Note</p>
+            <h2>观展提要</h2>
+            <p>这是一页只用于观看的公开展厅。没有上传入口，也不提供后台跳转，适合像翻阅展册一样，从一个章节缓慢进入另一个章节。</p>
+          </div>
+          <div class="public-note-quote">
+            <span class="public-note-quote-mark">“</span>
+            <p>先靠近画面，再决定停留多久。</p>
+          </div>
+          <div class="public-note-list">
+            <article class="public-note-item">
+              <span class="note-index">01</span>
+              <div class="note-copy">
+                <strong>按国家进入</strong>
+                <p>每个分区像一段独立章节，适合顺着地域与光线慢慢浏览。</p>
+              </div>
+            </article>
+            <article class="public-note-item">
+              <span class="note-index">02</span>
+              <div class="note-copy">
+                <strong>点击放大观看</strong>
+                <p>任意图片都可以进入大图，适合更近距离地看纹理、街景和光影层次。</p>
+              </div>
+            </article>
+            <article class="public-note-item">
+              <span class="note-index">03</span>
+              <div class="note-copy">
+                <strong>延伸到桌面</strong>
+                <p>如果想把某张图留在电脑桌面，可以在大图里继续使用桌面助手功能。</p>
+              </div>
+            </article>
+          </div>
+          <div class="public-note-actions">
+            <a class="action-link" href="#public-gallery-groups">浏览章节</a>
+            <a class="action-link" href="#wallpaper-helper-guide">桌面助手</a>
+          </div>
+        </aside>
+      </section>
+
+      <details class="mobile-curation-sheet panel-surface" id="mobile-curation-sheet">
+        <summary>
+          <span class="mobile-sheet-kicker">Mobile Note</span>
+          <strong>观展说明</strong>
+          <span class="mobile-sheet-summary">手机端优先看图，说明收在这里。</span>
+        </summary>
+        <div class="mobile-sheet-body">
+          <p class="mobile-sheet-intro">这是一个只用于观看的公开展厅。没有上传入口，也不会跳转后台，适合顺着国家章节缓慢浏览。</p>
+          <p class="mobile-sheet-quote">先靠近画面，再决定停留多久。</p>
+          <div class="mobile-sheet-points" aria-label="手机端观展说明">
+            <span>按国家进入</span>
+            <span>点击放大观看</span>
+            <span>大图里可下载原图</span>
+          </div>
+        </div>
+      </details>
+
+      <section class="catalog-shell panel-surface public-catalog">
+        <div class="catalog-heading">
+          <div>
+            <p class="section-kicker">Open Gallery</p>
+            <h2>按国家浏览作品</h2>
+          </div>
+          <p class="catalog-note">首页每个国家只保留少量精选图，优先把不同城市与地点的线索先铺开；进入国家章节后，再完整浏览该分区的全部照片与导览文字。</p>
+        </div>
+
+        <div id="public-gallery-groups" class="gallery-groups">
+          {% for group in groups %}
+          <section class="country-section">
+            {{ country_intro(group, loop.index) }}
+
+            <div class="gallery-grid collage-grid">
+              {% for photo in group.photos %}
+              {{ photo_card(photo, collage_slot=photo.collage_slot or collage_slot(photo, loop.index0)) }}
+              {% endfor %}
+            </div>
+          </section>
+          {% else %}
+          <section class="empty-state">
+            <p class="section-kicker">Archive Empty</p>
+            <h3>公开展厅里还没有作品</h3>
+            <p>等作者上传第一张照片后，这里会自动显示对应国家分区与作品卡片。</p>
+          </section>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section id="wallpaper-helper-guide" class="helper-guide panel-surface">
+        <div class="helper-guide-desktop">
+          <div class="helper-guide-header">
+            <div>
+              <p class="section-kicker">Wallpaper Helper</p>
+              <h2>桌面助手下载与安装教程</h2>
+            </div>
+            <p class="helper-guide-note">网页本身不能直接修改访客电脑壁纸，所以需要本地桌面助手配合。下面把下载入口位置、安装步骤和当前可用方案都放在同一个页面里。</p>
+          </div>
+
+          <div class="helper-guide-grid">
+            <article class="helper-guide-card">
+              <p class="helper-guide-label">下载入口</p>
+              <h3>安装包会直接放在这里</h3>
+              <p>当前已提供 macOS 版桌面助手压缩包。下载、解压并启动后，展示页大图弹层就可以直接调用本地助手，把当前图片设为你的电脑壁纸。</p>
+              <div class="helper-guide-actions">
+                <a class="action-link primary-link helper-download-link" href="{{ url_for('static', filename='downloads/wallpaper-helper-macos.zip', v=static_asset_version('downloads/wallpaper-helper-macos.zip')) }}" download>下载 macOS 桌面助手</a>
+                <a class="helper-download-secondary" href="{{ url_for('static', filename='downloads/README.txt', v=static_asset_version('downloads/README.txt')) }}" download>下载安装说明</a>
+                <p class="helper-guide-caption">压缩包里已包含启动器 `wallpaper-helper-macos.command`、本地服务脚本和说明文件。</p>
+              </div>
+            </article>
+
+            <article class="helper-guide-card">
+              <p class="helper-guide-label">安装步骤</p>
+              <h3>按这三步完成安装与启用</h3>
+              <ol class="helper-guide-steps">
+                <li>在这个页面下载 `macOS` 桌面助手压缩包并解压。</li>
+                <li>双击 `wallpaper-helper-macos.command` 启动本地助手，并按系统提示授权它修改桌面壁纸。</li>
+                <li>保持终端窗口开启，回到展示页打开大图，点击“一键设为当前电脑壁纸”。</li>
+              </ol>
+            </article>
+
+            <article class="helper-guide-card">
+              <p class="helper-guide-label">当前可用</p>
+              <h3>现在已经可以一键设壁纸</h3>
+              <ol class="helper-guide-steps">
+                <li>先按上面的步骤启动桌面助手。</li>
+                <li>点击任意图片查看大图。</li>
+                <li>点击“一键设为当前电脑壁纸”；如果助手未启动，也可以继续使用下载按钮手动设置。</li>
+              </ol>
+            </article>
+          </div>
+        </div>
+
+        <details class="helper-guide-mobile">
+          <summary>
+            <span class="mobile-sheet-kicker">Image Download</span>
+            <strong>手机端下载说明</strong>
+            <span class="mobile-sheet-summary">需要时再展开，不占首屏。</span>
+          </summary>
+          <div class="mobile-sheet-body">
+            <p class="mobile-sheet-intro">手机端不提供一键设置壁纸。打开任意大图后，只保留“下载原图”，方便直接保存到相册或文件。</p>
+            <ol class="helper-guide-steps">
+              <li>点击任意图片，进入大图查看。</li>
+              <li>点击“下载原图”。</li>
+              <li>使用系统保存或分享面板，把图片留到手机中。</li>
+            </ol>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    {{ lightbox_dialog() }}
+    <script src="{{ url_for('static', filename='country-intros.js', v=static_asset_version('country-intros.js')) }}"></script>
+    <script src="{{ url_for('static', filename='photo-lightbox.js', v=static_asset_version('photo-lightbox.js') ) }}"></script>
+  </body>
+</html>
