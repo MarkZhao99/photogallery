@@ -225,6 +225,37 @@ git push
 - Username: 你的 GitHub 用户名
 - Password: 你的 GitHub PAT
 
+## Git Hooks
+
+这个仓库现在自带一个 `pre-push` 安全检查，会在真正推送到 GitHub 前扫描：
+
+- 可能的真实 token
+- 私钥片段
+- 本机绝对路径泄露
+- 可疑的 `API_KEY` / `TOKEN` / `SECRET` / `PASSWORD` 赋值
+
+安装一次即可：
+
+```bash
+./scripts/install_git_hooks.sh
+```
+
+安装后每次执行 `git push`，Git 都会自动运行仓库内的 `.githooks/pre-push`。
+
+如果被拦下，优先检查：
+
+```bash
+git diff --cached
+python3 scripts/check_repo_secrets.py
+```
+
+常见修复方式：
+
+- 把真实密钥移到本地 `.env`
+- 把线上密钥移到 GitHub Secrets / Render 环境变量
+- 把文档里的本机绝对路径改成相对路径或占位符
+- 把不该入库的文件加入 `.gitignore`
+
 ## 相关文档
 
 - [自动 pending 图片元数据设计](docs/superpowers/specs/2026-04-19-auto-pending-photo-metadata-design.md)
