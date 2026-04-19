@@ -262,7 +262,7 @@ def assign_collage_slots(photos: list[dict], columns: int = COLLAGE_COLUMNS) -> 
 
 
 def admin_username() -> str:
-    return os.getenv("ADMIN_USERNAME", "zxxk").strip() or "zxxk"
+    return os.getenv("ADMIN_USERNAME", "admin").strip() or "admin"
 
 
 def admin_password() -> str:

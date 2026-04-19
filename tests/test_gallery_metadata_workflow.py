@@ -19,7 +19,7 @@ def base_env(temp_dir: str, **overrides: str) -> dict[str, str]:
     values = {
         "PHOTO_STORAGE": "icloud",
         "ICLOUD_PHOTO_DIR": temp_dir,
-        "ADMIN_USERNAME": "zxxk",
+        "ADMIN_USERNAME": "admin",
         "ADMIN_PASSWORD": "test-password",
         "ADMIN_SESSION_SECRET": "test-session-secret",
         "PORT": "5001",

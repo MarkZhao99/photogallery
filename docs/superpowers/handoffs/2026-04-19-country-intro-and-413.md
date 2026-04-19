@@ -59,12 +59,12 @@ unexpected status 413 Payload Too Large: {"error":"Payload Too Large","message":
 
 ## Evidence Paths
 
-- Proxy/model config: `/Users/mark/.codex/config.toml`
+- Proxy/model config: `~/.codex/config.toml`
 - Archived error session:
-  `/Users/mark/.codex/sessions/2026/04/17/rollout-2026-04-17T10-36-37-019d994c-2319-7253-bb38-daec106ba30a.jsonl`
+  `~/.codex/sessions/2026/04/17/rollout-2026-04-17T10-36-37-019d994c-2319-7253-bb38-daec106ba30a.jsonl`
 - Follow-up diagnosis sessions:
-  `/Users/mark/.codex/sessions/2026/04/19/rollout-2026-04-19T00-36-16-019da173-36d2-7011-a740-6a58c47a8e22.jsonl`
-  `/Users/mark/.codex/sessions/2026/04/19/rollout-2026-04-19T00-53-27-019da182-f090-7761-bc48-e9196f895042.jsonl`
+  `~/.codex/sessions/2026/04/19/rollout-2026-04-19T00-36-16-019da173-36d2-7011-a740-6a58c47a8e22.jsonl`
+  `~/.codex/sessions/2026/04/19/rollout-2026-04-19T00-53-27-019da182-f090-7761-bc48-e9196f895042.jsonl`
 
 ## Resume Guidance
 
@@ -78,35 +78,35 @@ unexpected status 413 Payload Too Large: {"error":"Payload Too Large","message":
   - Install background LaunchAgent: `python3 scripts/install_short_session_boundary_launchd.py`
   - Emit boundary: `python3 scripts/emit_short_session_boundary.py --handoff /abs/path/to/handoff.md --resume-command "继续短会话：读取 ..." --reason image_batch_limit`
   - LaunchAgent plist path: `~/Library/LaunchAgents/com.mark.vscode1.short-session-boundary-watcher.plist`
-  - LaunchAgent logs: `/Users/mark/vscode/vscode1/.runtime/launchd/`
+  - LaunchAgent logs: `.runtime/launchd/`
 - Auto metadata worker support now exists:
   - Run one batch manually: `python3 scripts/auto_metadata_worker.py`
   - Install background LaunchAgent: `python3 scripts/install_auto_metadata_worker_launchd.py`
   - LaunchAgent plist path: `~/Library/LaunchAgents/com.mark.vscode1.auto-metadata-worker.plist`
-  - Worker logs: `/Users/mark/vscode/vscode1/.runtime/launchd/`
+  - Worker logs: `.runtime/launchd/`
 - Worker bridge files:
-  - `/Users/mark/vscode/vscode1/scripts/auto_metadata_worker.py`
-  - `/Users/mark/vscode/vscode1/scripts/auto_metadata_worker_support.py`
-  - `/Users/mark/vscode/vscode1/scripts/auto_metadata_worker_launchd.py`
-  - `/Users/mark/vscode/vscode1/scripts/install_auto_metadata_worker_launchd.py`
-  - `/Users/mark/vscode/vscode1/scripts/prompts/gallery_auto_metadata_worker.md`
+  - `scripts/auto_metadata_worker.py`
+  - `scripts/auto_metadata_worker_support.py`
+  - `scripts/auto_metadata_worker_launchd.py`
+  - `scripts/install_auto_metadata_worker_launchd.py`
+  - `scripts/prompts/gallery_auto_metadata_worker.md`
 - Manual review payloads used for the Norway run were saved under:
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/norway-batch-01.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/norway-batch-02.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/norway-batch-03.json`
+  - `.runtime/manual-review/norway-batch-01.json`
+  - `.runtime/manual-review/norway-batch-02.json`
+  - `.runtime/manual-review/norway-batch-03.json`
 - Additional payloads saved in this run:
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/spain-batch-01.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/spain-batch-02.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/spain-batch-03.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/italy-batch-01.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/italy-batch-02.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/italy-batch-03.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/italy-batch-04.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/france-batch-01.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/france-batch-02.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/czech-batch-01.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/austria-batch-01.json`
-  - `/Users/mark/vscode/vscode1/.runtime/manual-review/austria-batch-02.json`
+  - `.runtime/manual-review/spain-batch-01.json`
+  - `.runtime/manual-review/spain-batch-02.json`
+  - `.runtime/manual-review/spain-batch-03.json`
+  - `.runtime/manual-review/italy-batch-01.json`
+  - `.runtime/manual-review/italy-batch-02.json`
+  - `.runtime/manual-review/italy-batch-03.json`
+  - `.runtime/manual-review/italy-batch-04.json`
+  - `.runtime/manual-review/france-batch-01.json`
+  - `.runtime/manual-review/france-batch-02.json`
+  - `.runtime/manual-review/czech-batch-01.json`
+  - `.runtime/manual-review/austria-batch-01.json`
+  - `.runtime/manual-review/austria-batch-02.json`
 
 ## No Known App-Side Gaps
 

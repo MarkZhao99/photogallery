@@ -24,7 +24,7 @@
 1. 你已经安装项目依赖
 
 ```bash
-cd /Users/mark/vscode/vscode1
+cd /path/to/photogallery
 pip install -r requirements.txt
 ```
 
@@ -39,7 +39,7 @@ ICLOUD_PHOTO_DIR=~/Library/Mobile Documents/com~apple~CloudDocs/web图库
 
 如果你只是想尽快分享给别人看，现在最简单的步骤只有这一个：
 
-1. 在 Finder 里双击 [start_public_gallery_share.command](/Users/mark/vscode/vscode1/start_public_gallery_share.command)
+1. 在 Finder 里双击 [start_public_gallery_share.command](start_public_gallery_share.command)
 
 双击后它会自动完成这些事情：
 
@@ -53,12 +53,12 @@ ICLOUD_PHOTO_DIR=~/Library/Mobile Documents/com~apple~CloudDocs/web图库
 - 保持这个终端窗口不要关
 - 把里面显示的 `https://xxxx.trycloudflare.com` 发给别人
 
-停止时，双击 [stop_public_gallery_share.command](/Users/mark/vscode/vscode1/stop_public_gallery_share.command) 即可。
+停止时，双击 [stop_public_gallery_share.command](stop_public_gallery_share.command) 即可。
 
 ## 1. 启动本地后台和展示页
 
 ```bash
-cd /Users/mark/vscode/vscode1
+cd /path/to/photogallery
 ./scripts/start_local_gallery_stack.sh
 ```
 
@@ -76,7 +76,7 @@ cd /Users/mark/vscode/vscode1
 日志会写到：
 
 ```text
-/Users/mark/vscode/vscode1/.runtime
+.runtime/
 ```
 
 ## 3. 停止本地服务
@@ -126,7 +126,7 @@ cloudflared tunnel create gallery-public
 
 模板文件：
 
-[cloudflared/gallery-public.example.yml](/Users/mark/vscode/vscode1/cloudflared/gallery-public.example.yml)
+[cloudflared/gallery-public.example.yml](cloudflared/gallery-public.example.yml)
 
 把里面这几项改掉：
 

@@ -52,8 +52,8 @@
 
 **实施范围**
 
-- 修改 [app.py](/Users/mark/vscode/vscode1/app.py)
-- 更新 [.env.example](/Users/mark/vscode/vscode1/.env.example) 与 [.env](/Users/mark/vscode/vscode1/.env)
+- 修改 [`app.py`](../../../app.py)
+- 更新 [`.env.example`](../../../.env.example) 与本地 `.env`
 - 新增测试目录与回归测试
 - 新增本地运行/分享脚本
 - 新增 Cloudflare Tunnel 配置样板

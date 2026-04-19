@@ -10,6 +10,15 @@ __pycache__/
 .pytest_cache/
 .pyre/
 .mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/
 
 # Runtime and generated files
 .runtime/

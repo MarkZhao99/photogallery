@@ -1,5 +1,5 @@
 tunnel: REPLACE_WITH_YOUR_TUNNEL_UUID
-credentials-file: /Users/mark/.cloudflared/REPLACE_WITH_YOUR_TUNNEL_UUID.json
+credentials-file: ~/.cloudflared/REPLACE_WITH_YOUR_TUNNEL_UUID.json
 
 ingress:
   - hostname: gallery.example.com
