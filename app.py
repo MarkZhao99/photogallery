@@ -1178,16 +1178,25 @@ def build_groups(
     groups = group_photos_by_country(photos, descriptions)
     for group in groups:
         all_photos = list(group["photos"])
-        display_photos = list(all_photos)
+        preview_photos = list(all_photos)
+        overflow_photos: list[dict] = []
         if preview_limit and len(all_photos) > preview_limit:
-            display_photos = select_country_preview_photos(all_photos, limit=preview_limit)
+            preview_photos = select_country_preview_photos(all_photos, limit=preview_limit)
+            preview_names = {str(photo.get("name") or "") for photo in preview_photos}
+            overflow_photos = [
+                photo for photo in all_photos if str(photo.get("name") or "") not in preview_names
+            ]
 
         group["count"] = len(all_photos)
-        group["visible_count"] = len(display_photos)
-        group["is_preview"] = len(display_photos) < len(all_photos)
+        group["visible_count"] = len(preview_photos)
+        group["overflow_count"] = len(overflow_photos)
+        group["preview_photos"] = assign_collage_slots(preview_photos)
+        group["overflow_photos"] = assign_collage_slots(overflow_photos)
+        group["photos"] = assign_collage_slots(all_photos)
+        group["has_overflow_photos"] = bool(overflow_photos)
+        group["is_preview"] = group["has_overflow_photos"]
         group["preview_note"] = "首页精选" if group["is_preview"] else ""
         group["detail_url"] = url_for(detail_endpoint, country=group["country"]) if detail_endpoint else ""
-        group["photos"] = assign_collage_slots(display_photos)
     return groups
 
 
@@ -1214,7 +1223,7 @@ def normalize_preview_width(raw_width: Optional[int]) -> int:
 
 
 def preview_card_widths() -> tuple[int, ...]:
-    widths = (480, 720, 1080, preview_max_edge())
+    widths = (360, 540, 720, 1080)
     normalized = {normalize_preview_width(width) for width in widths}
     return tuple(sorted(normalized))
 
@@ -1225,7 +1234,7 @@ def preview_card_default_width() -> int:
 
 
 def preview_card_sizes() -> str:
-    return "(max-width: 380px) 100vw, (max-width: 960px) 50vw, 33vw"
+    return "(max-width: 640px) 46vw, (max-width: 1100px) 24vw, 18vw"
 
 
 def preview_cache_seconds() -> int:

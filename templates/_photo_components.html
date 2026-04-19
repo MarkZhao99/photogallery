@@ -1,5 +1,5 @@
-{% macro photo_card(photo, editable=False, collage_slot="collage-tile-standard") -%}
-<article class="photo-card collage-tile {{ collage_slot }}{% if editable %} editable-photo-card{% else %} public-photo-card{% endif %}" data-collage-slot="{{ collage_slot }}" data-layout-orientation="{{ photo.layout_orientation or 'square' }}" data-layout-ratio="{{ photo.layout_ratio or 1 }}"{% if editable %} data-photo-name="{{ photo.name }}" data-photo-country="{{ photo.country }}" data-photo-title="{{ photo.title }}"{% endif %}>
+{% macro photo_card(photo, editable=False, collage_slot="collage-tile-standard", deferred=False) -%}
+<article class="photo-card collage-tile {{ collage_slot }}{% if editable %} editable-photo-card{% else %} public-photo-card{% endif %}{% if deferred %} deferred-photo-card{% endif %}" data-collage-slot="{{ collage_slot }}" data-layout-orientation="{{ photo.layout_orientation or 'square' }}" data-layout-ratio="{{ photo.layout_ratio or 1 }}"{% if editable %} data-photo-name="{{ photo.name }}" data-photo-country="{{ photo.country }}" data-photo-title="{{ photo.title }}"{% endif %}>
   {% if editable %}
   <button
     class="edit-photo-button"
@@ -22,9 +22,16 @@
     data-image-alt="{{ photo.title or photo.name }}"
   >
     <img
+      {% if deferred %}
+      data-deferred-photo="true"
+      data-src="{{ photo.card_image_url or photo.preview_url or photo.url }}"
+      {% if photo.card_image_srcset %}data-srcset="{{ photo.card_image_srcset }}"{% endif %}
+      {% if photo.card_image_sizes %}data-sizes="{{ photo.card_image_sizes }}"{% endif %}
+      {% else %}
       src="{{ photo.card_image_url or photo.preview_url or photo.url }}"
       {% if photo.card_image_srcset %}srcset="{{ photo.card_image_srcset }}"{% endif %}
       {% if photo.card_image_sizes %}sizes="{{ photo.card_image_sizes }}"{% endif %}
+      {% endif %}
       alt="{{ photo.title or photo.name }}"
       loading="lazy"
       decoding="async"
@@ -51,6 +58,9 @@ collage-tile-standard
 {%- endmacro %}
 
 {% macro country_intro(group, sequence) -%}
+{% set has_overflow = group.has_overflow_photos %}
+{% set collapsed_label = "展开本国家全部作品" if has_overflow else "展开导览" %}
+{% set expanded_label = "收起本国家作品" if has_overflow else "收起导览" %}
 <div class="country-header">
   <p class="country-sequence">{{ "%02d"|format(sequence) }}</p>
   <div class="country-heading">
@@ -68,7 +78,15 @@ collage-tile-standard
       </div>
       {% endif %}
       <p class="country-summary">{{ group.short_description }}</p>
-      <button class="country-intro-toggle" type="button" data-country-intro-toggle aria-expanded="false">展开导览</button>
+      <button
+        class="country-intro-toggle"
+        type="button"
+        data-country-intro-toggle
+        data-country-expand-toggle
+        data-collapsed-label="{{ collapsed_label }}"
+        data-expanded-label="{{ expanded_label }}"
+        aria-expanded="false"
+      >{{ collapsed_label }}</button>
       <div class="country-detail" data-country-intro-detail hidden>
         <p class="country-detail-copy">{{ group.long_description }}</p>
       </div>

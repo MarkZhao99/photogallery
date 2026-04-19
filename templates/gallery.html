@@ -129,18 +129,36 @@
             <p class="section-kicker">Open Gallery</p>
             <h2>按国家浏览作品</h2>
           </div>
-          <p class="catalog-note">首页每个国家只保留少量精选图，优先把不同城市与地点的线索先铺开；进入国家章节后，再完整浏览该分区的全部照片与导览文字。</p>
+          <p class="catalog-note">首页先加载每个国家的精选照片，再在后台补载剩余作品。点击任一国家按钮，会在当前页立即展开长版导览与该国家的完整图片区。</p>
         </div>
 
         <div id="public-gallery-groups" class="gallery-groups">
           {% for group in groups %}
-          <section class="country-section">
+          <section
+            class="country-section"
+            data-country-section
+            data-country-name="{{ group.country }}"
+            data-country-expanded="false"
+            data-country-priority="idle"
+          >
             {{ country_intro(group, loop.index) }}
 
-            <div class="gallery-grid collage-grid">
-              {% for photo in group.photos %}
-              {{ photo_card(photo, collage_slot=photo.collage_slot or collage_slot(photo, loop.index0)) }}
-              {% endfor %}
+            <div class="country-gallery-stack">
+              <div class="gallery-grid collage-grid" data-country-preview-grid>
+                {% for photo in group.preview_photos %}
+                {{ photo_card(photo, collage_slot=photo.collage_slot or collage_slot(photo, loop.index0)) }}
+                {% endfor %}
+              </div>
+
+              {% if group.overflow_photos %}
+              <div class="country-overflow-shell" data-country-overflow-shell hidden>
+                <div class="gallery-grid collage-grid country-overflow-grid" data-country-overflow-grid>
+                  {% for photo in group.overflow_photos %}
+                  {{ photo_card(photo, collage_slot=photo.collage_slot or collage_slot(photo, loop.index0), deferred=True) }}
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
             </div>
           </section>
           {% else %}

@@ -883,6 +883,11 @@ input[type="file"]::file-selector-button {
   box-shadow: none;
 }
 
+.country-section[data-country-expanded="true"] .country-intro-toggle {
+  background: rgba(181, 93, 63, 0.12);
+  border-color: rgba(181, 93, 63, 0.28);
+}
+
 .country-detail[hidden] {
   display: none !important;
 }
@@ -924,6 +929,20 @@ input[type="file"]::file-selector-button {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.country-gallery-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.country-overflow-shell {
+  display: block;
+}
+
+.country-overflow-shell[hidden] {
+  display: none !important;
 }
 
 .gallery-grid:not(.collage-grid) {
@@ -1016,11 +1035,18 @@ input[type="file"]::file-selector-button {
 }
 
 .photo-card.collage-tile > .photo-view-button > img {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: 0;
   object-fit: cover;
   transition: none;
+}
+
+.deferred-photo-card .photo-view-button > img:not([src]) {
+  background:
+    linear-gradient(135deg, rgba(181, 93, 63, 0.12), rgba(255, 255, 255, 0.42)),
+    rgba(244, 235, 220, 0.72);
 }
 
 .photo-card.collage-tile:hover > .photo-view-button > img {

@@ -297,18 +297,19 @@ class LocalPublicShareTests(unittest.TestCase):
 
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIn('src="/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=720"', html)
-        self.assertIn("/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=480 480w", html)
+        self.assertIn('src="/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=540"', html)
+        self.assertIn("/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=360 360w", html)
+        self.assertIn("/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=540 540w", html)
         self.assertIn("/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=720 720w", html)
         self.assertIn("/photos-preview/%E5%A5%A5%E5%9C%B0%E5%88%A9/demo.jpg?w=1080 1080w", html)
-        self.assertIn('sizes="(max-width: 380px) 100vw, (max-width: 960px) 50vw, 33vw"', html)
+        self.assertIn('sizes="(max-width: 640px) 46vw, (max-width: 1100px) 24vw, 18vw"', html)
 
     def test_public_gallery_uses_square_collage_tile_markup(self):
         html = self.render_public_gallery_html()
         self.assertIn('class="gallery-grid collage-grid"', html)
         self.assertNotIn("collage-tile-hero", html)
         cards = self.collage_cards(html, card_kind="public-photo-card")
-        self.assertEqual(len(cards), 4)
+        self.assertEqual(len(cards), 6)
         for card in cards:
             self.assertIn(card["slot"], {"collage-tile-standard", "collage-tile-wide", "collage-tile-tall"})
 
@@ -345,9 +346,12 @@ class LocalPublicShareTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("湖山与旧镇在静光里缓慢展开。", html)
         self.assertIn("奥地利的影像沿着湖岸、小镇与山体层层展开", html)
-        self.assertIn("展开导览", html)
+        self.assertIn("展开本国家全部作品", html)
         self.assertIn('class="country-detail"', html)
         self.assertIn('aria-expanded="false"', html)
+        self.assertIn('data-country-expand-toggle', html)
+        self.assertIn('data-country-overflow-grid', html)
+        self.assertEqual(len(re.findall(r'data-deferred-photo="true"', html)), 2)
 
     def test_admin_gallery_uses_same_intro_structure_as_public_page(self):
         with loaded_app_module(PUBLIC_SITE_ONLY="false") as app_module:
@@ -489,7 +493,7 @@ class LocalPublicShareTests(unittest.TestCase):
         self.assertEqual(response.json["groups"], [])
         self.assertEqual(response.json["description_updates"]["deleted"], ["奥地利"])
 
-    def test_public_homepage_limits_country_preview_and_links_to_detail_page(self):
+    def test_public_homepage_renders_inline_country_expansion_with_deferred_overflow(self):
         with loaded_app_module(PUBLIC_SITE_ONLY="true") as app_module:
             class CityStorage:
                 def list_photos(self):
@@ -516,7 +520,12 @@ class LocalPublicShareTests(unittest.TestCase):
         html = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         gallery_html = html.split('<section id="wallpaper-helper-guide"', 1)[0]
-        self.assertEqual(len(self.collage_cards(gallery_html, card_kind="public-photo-card")), 4)
+        self.assertEqual(len(self.collage_cards(gallery_html, card_kind="public-photo-card")), 6)
+        self.assertEqual(len(re.findall(r'data-deferred-photo="true"', gallery_html)), 2)
+        self.assertIn('data-country-expand-toggle', html)
+        self.assertIn('data-country-overflow-grid', html)
+        self.assertIn("展开本国家全部作品", html)
+        self.assertIn("完整导览文字。", html)
         self.assertIn("/gallery/country/%E6%84%8F%E5%A4%A7%E5%88%A9", html)
         self.assertIn("首页精选", html)
 
@@ -565,6 +574,14 @@ class LocalPublicShareTests(unittest.TestCase):
 
         self.assertEqual(len(preview), 4)
         self.assertEqual({photo["city"] for photo in preview}, {"罗马", "威尼斯", "佛罗伦萨", "米兰"})
+
+    def test_country_intro_script_contains_priority_loader_hooks(self):
+        script = (PROJECT_ROOT / "static" / "country-intros.js").read_text(encoding="utf-8")
+
+        self.assertIn("data-country-expand-toggle", script)
+        self.assertIn("requestIdleCallback", script)
+        self.assertIn("data-country-priority", script)
+        self.assertIn("activateDeferredImages", script)
 
     def test_delete_api_clears_preview_cache_and_preview_route_returns_404(self):
         with loaded_app_module(PUBLIC_SITE_ONLY="false") as app_module:
